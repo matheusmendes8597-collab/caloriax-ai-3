@@ -1,8 +1,11 @@
 export const config = {
   api: {
-    bodyParser: true,
+    bodyParser: false, // 🚨 obrigatório
   },
 };
+
+import formidable from "formidable";
+import fs from "fs";
 
 declare const process: any;
 
@@ -17,23 +20,29 @@ export default async function handler(req: any, res: any) {
     return res.status(405).json({ error: "Método não permitido" });
   }
 
-  const { audioBase64 } = req.body || {};
-
-  if (!audioBase64) {
-    return res.status(400).json({ error: "Áudio não enviado" });
-  }
-
   try {
+    const form = formidable({ multiples: false });
+
+    const [fields, files]: any = await form.parse(req);
+
+    const file = files.file?.[0];
+
+    if (!file) {
+      return res.status(400).json({ error: "Áudio não enviado" });
+    }
+
+    const fileStream = fs.createReadStream(file.filepath);
+
+    const formData = new FormData();
+    formData.append("file", fileStream);
+    formData.append("model", "gpt-4o-mini-transcribe");
+
     const response = await fetch("https://api.openai.com/v1/audio/transcriptions", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-        "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        file: audioBase64,
-        model: "gpt-4o-mini-transcribe",
-      }),
+      body: formData,
     });
 
     const data = await response.json();
