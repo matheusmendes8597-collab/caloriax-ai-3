@@ -6,6 +6,8 @@ export const config = {
 
 declare const process: any;
 
+import FormData from "form-data";
+
 export default async function handler(req: any, res: any) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
@@ -24,20 +26,28 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
-    // converter base64 → blob
-    const byteCharacters = Buffer.from(audioBase64, "base64");
+    // 🔥 converte base64 → buffer (Node)
+    const buffer = Buffer.from(audioBase64, "base64");
 
+    // 🔥 form-data correto (Node)
     const formData = new FormData();
-    formData.append("file", new Blob([byteCharacters]), "audio.webm");
+    formData.append("file", buffer, {
+      filename: "audio.webm",
+      contentType: "audio/webm",
+    });
     formData.append("model", "gpt-4o-mini-transcribe");
 
-    const response = await fetch("https://api.openai.com/v1/audio/transcriptions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-      },
-      body: formData,
-    });
+    const response = await fetch(
+      "https://api.openai.com/v1/audio/transcriptions",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+          ...formData.getHeaders(), // 🔥 ESSENCIAL
+        },
+        body: formData,
+      }
+    );
 
     const data = await response.json();
 
