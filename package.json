@@ -2,9 +2,6 @@
   "name": "caloriax-api-3",
   "version": "1.0.0",
   "type": "module",
-  "dependencies": {
-    "form-data": "^4.0.0"
-  },
   "devDependencies": {
     "@types/node": "^20.0.0"
   }
